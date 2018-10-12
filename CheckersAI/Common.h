@@ -39,4 +39,6 @@ public:
 		{start.first - end.first > 0 ? start.first - 1 : start.first + 1
 		, start.second - end.second > 0 ? start.second - 1 : start.second + 1 }; 
 	}
+	static Position AttackFromMove(Position pos) { return Position{ pos.first * 2, pos.second * 2 }; }
+	static Position PositionPlusMove(Position pos, Position move) { return Position{ pos.first + move.first, pos.second + move.second }; }
 };

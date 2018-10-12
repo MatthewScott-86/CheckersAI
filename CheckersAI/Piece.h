@@ -8,6 +8,7 @@ class IPiece
 {
 	virtual IPiece* Clone() = 0; 
 	virtual IPiece* Upgrade() = 0;
+	virtual PieceType GetType() = 0;
 	virtual vector<Position> getMoves() = 0;
 	virtual vector<Position> getAttackMoves() = 0;
 	virtual string ToString() = 0;
@@ -26,6 +27,7 @@ public:
 
 	virtual PieceBase* Clone() override	{ throw runtime_error("Can't be here");	}
 	virtual PieceBase* Upgrade() override { throw runtime_error("Can't be here"); }
+	virtual PieceType GetType() override { throw runtime_error("Can't be here"); }
 	virtual vector<Position> getMoves() override { throw runtime_error("Cant be here");	}
 	virtual vector<Position> getAttackMoves() override { throw runtime_error("Cant be here"); }	
 	virtual string ToString() override { throw runtime_error("Cant be here"); }
@@ -47,6 +49,7 @@ public:
 	virtual PieceBase* Upgrade() override { 
 		return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction); 
 	}
+	virtual PieceType GetType() override { return PieceType::KING; }
 	virtual vector<Position> getMoves() override
 	{
 		vector<Position> moves;
@@ -80,6 +83,7 @@ public:
 	virtual PieceBase* Upgrade() override { 
 		return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction); 
 	}
+	virtual PieceType GetType() override { return PieceType::NORMAL; }
 	virtual vector<Position> getMoves() override
 	{
 		vector<Position> moves;

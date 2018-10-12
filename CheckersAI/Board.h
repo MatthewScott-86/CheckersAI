@@ -2,6 +2,7 @@
 #include <map>
 #include <unordered_map>
 #include <iostream>
+#include <assert.h>
 
 #include "Piece.h"
 
@@ -44,8 +45,7 @@ public:
 	void MovePiece(PieceCollection& pieces, Position start, Position end)
 	{
 		auto piece = pieces.find(start);
-		if (piece == pieces.end())
-			throw runtime_error("Invalid Piece Selection");
+		assert(piece != pieces.end()); //throw runtime_error("Invalid Piece Selection");
 
 
 		auto newPiece = piece->second->Clone();
