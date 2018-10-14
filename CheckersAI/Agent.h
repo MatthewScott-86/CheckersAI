@@ -1,5 +1,6 @@
 #pragma once
 #include "Board.h"
+#include <algorithm>
 #include <random>
 
 using MoveSequence = vector<pair<Position, Position>>;
@@ -8,18 +9,19 @@ class Agent
 {
 public:
 	Agent(Board& board, Color color) :
-		m_board(board), m_color(color), m_maxDepth(8)
+		m_board(board), m_color(color), m_maxDepth(4)
 	{
 		m_weights.resize(4);
-		m_weights[0] = rand() / RAND_MAX * 10;
-		m_weights[1] = rand() / RAND_MAX * 10;
-		m_weights[2] = rand() / RAND_MAX * 10 - 10;
-		m_weights[3] = rand() / RAND_MAX * 10 - 10;
+		m_weights[0] = double(rand()) / double(RAND_MAX) * 10;
+		m_weights[1] = double(rand()) / double(RAND_MAX) * 20;
+		m_weights[2] = double(rand()) / double(RAND_MAX) * 10;
+		m_weights[3] = double(rand()) / double(RAND_MAX) * 20;
+		//m_weights[0] = double(rand()) / double(RAND_MAX) * 10;
+		//m_weights[1] = double(rand()) / double(RAND_MAX) * 20;
+		//m_weights[2] = double(rand()) / double(RAND_MAX) * 10;
+		//m_weights[3] = double(rand()) / double(RAND_MAX) * 20;
 	}
-	void ChooseMove()
-	{
 
-	}
 	MoveSequence MiniMaxDecision()
 	{
 		double value = INT_MIN;
@@ -42,7 +44,8 @@ public:
 					&& m_board.PositionOnBoard(newPos))
 				{
 					//empty board square
-					tempBoard.Move(pos, newPos, m_color);
+					auto moveTest = tempBoard.Move(pos, newPos, m_color);
+					assert(moveTest);
 					tempMoves.push_back({ pos, newPos });
 					tempValue = MaxValue(tempBoard, Common::OtherColor(m_color), INT_MIN, INT_MAX, 1);
 				}
@@ -59,7 +62,8 @@ public:
 						continue;
 
 					tempMoves.push_back({ pos, newPos });
-					tempBoard.Move(pos, newPos, m_color);
+					auto moveTest = tempBoard.Move(pos, newPos, m_color);
+					assert(moveTest);
 					tempValue = MaxValueAttackSeries(tempBoard, m_color, INT_MIN, INT_MAX, 1, tempMoves);					
 				}
 
@@ -72,83 +76,244 @@ public:
 		}
 		return returnMoves;
 	}
-	/*void GetMostAttackMoves(Board& board, Color color, Position currentPos)
-	{
-		auto myPieces = board.getPieces(color);
-		auto otherPieces = board.getPieces(Common::OtherColor(color));
-		auto piece = myPieces.find(currentPos);
-		assert(piece != myPieces.end());
-		for (auto move : piece->second->getAttackMoves())
-		{
-			auto newPos = Common::PositionPlusMove(currentPos, move);
-			auto jumpedPos = Common::JumpedPosition(currentPos, newPos);
-			if (otherPieces.find(jumpedPos) != otherPieces.end()
-				&& myPieces.find(newPos) == myPieces.end()
-				&& otherPieces.find(newPos) == otherPieces.end()
-				&& board.PositionOnBoard(newPos))
-			{
-				board.Move(currentPos, newPos, color);
-				GetMostAttackMoves(board, color, newPos);
-				break;
-			}
-		}
-	}*/
+
 	double MaxValue(Board board, Color color, double alpha, double beta, int depth)
 	{
 		double value = INT_MIN;
-		if (!board.NoWinner() || depth == m_maxDepth)
-			return Fitness(board);
+		if (!board.NoWinner() || depth >= m_maxDepth)
+			return Fitness(board, color);
+
+		auto myPieces = board.getPieces(color);
+		auto otherPieces = board.getPieces(Common::OtherColor(color));
+		
+		for (auto piece : myPieces)
+		{
+			for (auto move : piece.second->getMoves())
+			{
+				MoveSequence tempMoves;
+				double tempValue = INT_MIN;
+				auto tempBoard = board;
+
+				auto pos = piece.first;
+				auto newPos = Common::PositionPlusMove(piece.first, move);
+
+				if (otherPieces.find(newPos) == otherPieces.end()
+					&& myPieces.find(newPos) == myPieces.end()
+					&& board.PositionOnBoard(newPos))
+				{
+					//empty board square
+					auto moveTest = tempBoard.Move(pos, newPos, color);
+					assert(moveTest);
+					//tempBoard.Print();
+					tempValue = MinValue(tempBoard, Common::OtherColor(color), INT_MIN, INT_MAX, depth + 1);
+				}
+				else
+				{
+					if (myPieces.find(newPos) != myPieces.end() || !board.PositionOnBoard(newPos))
+						continue;
+
+					assert(otherPieces.find(newPos) != otherPieces.end());
+					newPos = Common::PositionPlusMove(pos, Common::AttackFromMove(move));
+					if (otherPieces.find(newPos) != otherPieces.end()
+						|| myPieces.find(newPos) != myPieces.end()
+						|| !board.PositionOnBoard(newPos))
+						continue;
+
+					tempMoves.push_back({ pos, newPos });
+					auto moveTest = tempBoard.Move(pos, newPos, color);
+					assert(moveTest);
+					//tempBoard.Print();
+					tempValue = MaxValueAttackSeries(tempBoard, color, INT_MIN, INT_MAX, depth, tempMoves);
+				}
+
+				if (tempValue > value)
+				{
+					value = tempValue;
+				}
+			}
+		}
+		return value;
 	}
 	double MaxValueAttackSeries(Board board, Color color, double alpha, double beta, int depth, MoveSequence& moves)
 	{
 		double value = INT_MIN;
-		if (!board.NoWinner() || depth == m_maxDepth)
-			return Fitness(board);
+		if (!board.NoWinner() || depth >= m_maxDepth)
+			return Fitness(board, color);
+
+		auto currentPos = moves.back().second;
+		auto myPieces = board.getPieces(color);
+		auto otherPieces = board.getPieces(Common::OtherColor(color));
+		auto piece = myPieces.find(currentPos);
+		auto attackMoves = piece->second->getAttackMoves();
+		MoveSequence bestMoves;
+
+		bool attacked = false;
+		for (auto move : attackMoves)
+		{
+			auto tempBoard = board;
+			MoveSequence tempMoves;
+			auto newPos = Common::PositionPlusMove(currentPos, move);
+			auto jumpedPos = Common::JumpedPosition(currentPos, newPos);
+			if (!tempBoard.PositionOnBoard(newPos)
+				|| otherPieces.find(newPos) != otherPieces.end()
+				|| myPieces.find(newPos) != myPieces.end()
+				|| otherPieces.find(jumpedPos) == otherPieces.end())
+				continue;
+
+			attacked = true;
+			auto moveTest = tempBoard.Move(currentPos, newPos, color);
+			assert(moveTest);
+			//tempBoard.Print();
+			tempMoves.push_back({ currentPos, newPos });
+			auto tempValue = MaxValueAttackSeries(tempBoard, color, alpha, beta, depth, tempMoves);
+			if (tempValue > value)
+			{
+				bestMoves = tempMoves;
+				value = tempValue;
+			}
+		}
+		if (!attacked)
+		{
+			auto tempValue = MinValue(board, Common::OtherColor(color), alpha, beta, depth + 1);
+			if (tempValue > value)
+				value = tempValue;
+		}
+
+		for (auto move : bestMoves)
+			moves.push_back(move);
+		return value;
 	}
 	double MinValue(Board board, Color color, double alpha, double beta, int depth)
 	{
 		double value = INT_MAX;
-		if (!board.NoWinner() || depth == m_maxDepth)
-			return Fitness(board);
+		if (!board.NoWinner() || depth >= m_maxDepth)
+			return Fitness(board, color);
+
+		auto myPieces = board.getPieces(color);
+		auto otherPieces = board.getPieces(Common::OtherColor(color));
+		for (auto piece : myPieces)
+		{
+			for (auto move : piece.second->getMoves())
+			{
+				MoveSequence tempMoves;
+				double tempValue = INT_MAX;
+				auto tempBoard = board;
+
+				auto pos = piece.first;
+				auto newPos = Common::PositionPlusMove(piece.first, move);
+
+				if (otherPieces.find(newPos) == otherPieces.end()
+					&& myPieces.find(newPos) == myPieces.end()
+					&& board.PositionOnBoard(newPos))
+				{
+					//empty board square
+					auto moveTest = tempBoard.Move(pos, newPos, color);
+					assert(moveTest);
+					//tempBoard.Print();
+					tempValue = MaxValue(tempBoard, Common::OtherColor(color), INT_MIN, INT_MAX, depth + 1);
+				}
+				else
+				{
+					if (myPieces.find(newPos) != myPieces.end() || !board.PositionOnBoard(newPos))
+						continue;
+
+					assert(otherPieces.find(newPos) != otherPieces.end());
+					newPos = Common::PositionPlusMove(pos, Common::AttackFromMove(move));
+					if (otherPieces.find(newPos) != otherPieces.end()
+						|| myPieces.find(newPos) != myPieces.end()
+						|| !board.PositionOnBoard(newPos))
+						continue;
+
+					tempMoves.push_back({ pos, newPos });
+					auto moveTest = tempBoard.Move(pos, newPos, color);
+					assert(moveTest);
+					//tempBoard.Print();
+					tempValue = MinValueAttackSeries(tempBoard, color, INT_MIN, INT_MAX, depth, tempMoves);
+				}
+
+				if (tempValue < value)
+				{
+					value = tempValue;
+				}
+			}
+		}
+		return value;
 	}
 	double MinValueAttackSeries(Board board, Color color, double alpha, double beta, int depth, MoveSequence& moves)
 	{
 		double value = INT_MAX;
-		if (!board.NoWinner() || depth == m_maxDepth)
-			return Fitness(board);
+		if (!board.NoWinner() || depth >= m_maxDepth)
+			return Fitness(board, color);
+
+		auto currentPos = moves.back().second;
+		auto myPieces = board.getPieces(color);
+		auto otherPieces = board.getPieces(Common::OtherColor(color));
+		auto piece = myPieces.find(currentPos);
+		auto attackMoves = piece->second->getAttackMoves();
+		MoveSequence bestMoves;
+
+		bool attacked = false;
+		for (auto move : attackMoves)
+		{
+			auto tempBoard = board;
+			MoveSequence tempMoves;
+			auto newPos = Common::PositionPlusMove(currentPos, move);
+			auto jumpedPos = Common::JumpedPosition(currentPos, newPos);
+			if (!tempBoard.PositionOnBoard(newPos)
+				|| otherPieces.find(newPos) != otherPieces.end()
+				|| myPieces.find(newPos) != myPieces.end()
+				|| otherPieces.find(jumpedPos) == otherPieces.end())
+				continue;
+
+			attacked = true;
+			auto moveTest = tempBoard.Move(currentPos, newPos, color);
+			assert(moveTest);
+			//tempBoard.Print();
+			tempMoves.push_back({ currentPos, newPos });
+			auto tempValue = MinValueAttackSeries(tempBoard, color, alpha, beta, depth, tempMoves);
+			if (tempValue < value)
+			{
+				bestMoves = tempMoves;
+				value = tempValue;
+			}
+		}
+		if (!attacked)
+		{
+			auto tempValue = MinValue(board, Common::OtherColor(color), alpha, beta, depth + 1);
+			if (tempValue < value)
+				value = tempValue;
+		}
+
+		for (auto move : bestMoves)
+			moves.push_back(move);
+		return value;
 	}
-	double Fitness(Board& board)
+	double Fitness(Board& board, Color color)
 	{
 		double fitness = 0;
-		for (auto piece : board.getPieces(m_color))
+		for (auto piece : board.getPieces(color))
 		{
 			if (piece.second->GetType() == PieceType::NORMAL)
-				fitness += m_weights[0];
+				fitness += m_weights[Common::WeightStart(color) % 4];
 			else
-				fitness += m_weights[1];
+				fitness += m_weights[(Common::WeightStart(color) + 1) % 4];
 		}
-		for (auto piece : board.getPieces(Common::OtherColor(m_color)))
+		for (auto piece : board.getPieces(Common::OtherColor(color)))
 		{
 			if (piece.second->GetType() == PieceType::NORMAL)
-				fitness -= m_weights[2];
+				fitness -= m_weights[(Common::WeightStart(color) + 2) % 4];
 			else
-				fitness -= m_weights[3];
+				fitness -= m_weights[(Common::WeightStart(color) + 3) % 4];
 		}
 		return fitness;
 	}
 	void Move()
 	{
-		auto allMoves = GetAllMoves();
-		auto choice = rand() % allMoves.size();
-		auto pieceMoves = allMoves[choice];
-		for (auto move : pieceMoves)
+		auto moves = MiniMaxDecision();
+		for (auto move : moves)
 		{
-			auto test = m_board.Move(move.first, move.second, m_color);
 			cout << "{{" << to_string(move.first.first) << "," << to_string(move.first.second) << "},{" << to_string(move.second.first) << "," << to_string(move.second.second) << "}},";
-			if (test == false)
-			{
-				throw runtime_error("Invalid Move detected");
-			}
+			m_board.Move(move.first, move.second, m_color);
 		}
 	}
 	vector<MoveSequence> GetAllMoves()

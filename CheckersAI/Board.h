@@ -125,6 +125,7 @@ public:
 			cout << endl;
 		}
 		cout << endl;
+		cout << endl;
 	}
 	PieceCollection m_redPieces;
 	PieceCollection m_blackPieces;

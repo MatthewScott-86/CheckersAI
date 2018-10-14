@@ -33,6 +33,7 @@ static const char* ColorStrings[]
 class Common
 {
 public:
+	static int WeightStart(Color col) { return col == Color::RED ? 0 : 2; }
 	static Color OtherColor(Color col) { return col == Color::RED ? Color::BLACK : col == Color::BLACK ? Color::RED : Color::NO_COLOR; }
 	static Position JumpedPosition(Position start, Position end) { 
 		return Position 

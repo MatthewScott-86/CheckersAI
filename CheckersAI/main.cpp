@@ -6,7 +6,7 @@ int main()
 	srand(1234567890);
 	auto board = Board();
 	board.Print();
-	auto agentR = RandomAgent(board, Color::RED);
+	auto agentR = Agent(board, Color::RED);
 	auto agentB = RandomAgent(board, Color::BLACK);
 
 	int i = 0;
@@ -24,6 +24,7 @@ int main()
 			break;
 
 		cout << "Red " + to_string(i) << " : ";
+		cout << endl;
 		agentR.Move();
 		cout << endl;
 		board.Print();
