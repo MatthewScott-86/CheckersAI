@@ -9,17 +9,17 @@ class Agent
 {
 public:
 	Agent(Board& board, Color color) :
-		m_board(board), m_color(color), m_maxDepth(4)
+		m_board(board), m_color(color), m_maxDepth(3)
 	{
 		m_weights.resize(4);
 		m_weights[0] = double(rand()) / double(RAND_MAX) * 10;
 		m_weights[1] = double(rand()) / double(RAND_MAX) * 20;
 		m_weights[2] = double(rand()) / double(RAND_MAX) * 10;
 		m_weights[3] = double(rand()) / double(RAND_MAX) * 20;
-		//m_weights[0] = double(rand()) / double(RAND_MAX) * 10;
-		//m_weights[1] = double(rand()) / double(RAND_MAX) * 20;
-		//m_weights[2] = double(rand()) / double(RAND_MAX) * 10;
-		//m_weights[3] = double(rand()) / double(RAND_MAX) * 20;
+		m_weights[0] = double(rand()) / double(RAND_MAX) * 10;
+		m_weights[1] = double(rand()) / double(RAND_MAX) * 20;
+		m_weights[2] = double(rand()) / double(RAND_MAX) * 10;
+		m_weights[3] = double(rand()) / double(RAND_MAX) * 20;
 	}
 
 	MoveSequence MiniMaxDecision()
@@ -126,10 +126,10 @@ public:
 					tempValue = MaxValueAttackSeries(tempBoard, color, INT_MIN, INT_MAX, depth, tempMoves);
 				}
 
-				if (tempValue > value)
-				{
-					value = tempValue;
-				}
+				value = max(value, tempValue);
+				if (value >= beta)
+					return value;
+				alpha = max(alpha, value);
 			}
 		}
 		return value;
@@ -231,10 +231,11 @@ public:
 					tempValue = MinValueAttackSeries(tempBoard, color, INT_MIN, INT_MAX, depth, tempMoves);
 				}
 
-				if (tempValue < value)
-				{
-					value = tempValue;
-				}
+				value = min(tempValue, value);
+				if (value <= alpha)
+					return value;
+
+				beta = min(beta, value);
 			}
 		}
 		return value;
@@ -400,16 +401,17 @@ public:
 	void Move()
 	{
 		auto allMoves = GetAllMoves();
+		if (allMoves.size() <= 0)
+		{
+			m_board.getPieces(m_color).clear();
+			cout << "Player " << ColorStrings[m_color] << " cannot move, game lost" << endl;
+		}
 		auto choice = rand() % allMoves.size();
 		auto pieceMoves = allMoves[choice];
 		for (auto move : pieceMoves)
 		{
-			auto test = m_board.Move(move.first, move.second, m_color);
 			cout << "{{" << to_string(move.first.first) << "," << to_string(move.first.second) << "},{" << to_string(move.second.first) << "," << to_string(move.second.second) << "}},";
-			if (test == false)
-			{
-				throw runtime_error("Invalid Move detected");
-			}
+			assert(m_board.Move(move.first, move.second, m_color));
 		}
 	}
 	vector<MoveSequence> GetAllMoves()

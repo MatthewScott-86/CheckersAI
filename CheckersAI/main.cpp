@@ -28,6 +28,7 @@ int main()
 		agentR.Move();
 		cout << endl;
 		board.Print();
+		
 		i++;
 	}
 
