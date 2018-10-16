@@ -40,3 +40,9 @@
 *.log
 *.tlog
 *.lastbuildstate
+
+# Other
+*.ilk
+*.suo
+*.idb
+*.vc.db
