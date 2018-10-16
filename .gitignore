@@ -6,6 +6,11 @@
 *.lo
 *.o
 *.obj
+*.iobj
+
+# PDB
+*.pdb
+*.ipdb
 
 # Precompiled Headers
 *.gch
@@ -30,3 +35,8 @@
 *.exe
 *.out
 *.app
+
+# Logs
+*.log
+*.tlog
+*.lastbuildstate
