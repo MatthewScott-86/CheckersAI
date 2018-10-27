@@ -44,10 +44,12 @@ public:
 		: PieceBase(x, y, col, direction) {}
 
 	virtual PieceBase* Clone() override	{ 
-		return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction);
+		//return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction);
+		return this;
 	}
 	virtual PieceBase* Upgrade() override { 
-		return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction); 
+		//return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction);
+		return this;
 	}
 	virtual PieceType GetType() override { return PieceType::KING; }
 	virtual vector<Position> getMoves() override
@@ -78,10 +80,13 @@ public:
 		: PieceBase(x, y, col, direction) {}
 
 	virtual PieceBase* Clone() override { 
-		return new NormalPiece(m_pos.first, m_pos.second, m_color, m_direction); 
+		return this;
+		/*return new NormalPiece(m_pos.first, m_pos.second, m_color, m_direction);
+		return static_cast<NormalPiece*>(this);*/
 	}
 	virtual PieceBase* Upgrade() override { 
-		return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction); 
+		return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction);
+		//return reinterpret_cast<KingPiece*>(this);
 	}
 	virtual PieceType GetType() override { return PieceType::NORMAL; }
 	virtual vector<Position> getMoves() override

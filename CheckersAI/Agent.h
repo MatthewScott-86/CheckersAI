@@ -4,30 +4,59 @@
 #include <random>
 
 using MoveSequence = vector<pair<Position, Position>>;
+class Weights
+{
+public:
+	Weights()
+	{
 
+	}
+	Weights(vector<double> weights, int depth) : m_weights(weights), m_count(weights.size()), m_depth(depth) {}
+	Weights(int count, int depth) : m_count(count), m_depth(depth)
+	{
+		for (int i = 0; i < count; i++)
+		{
+			// because this weighting worked in first tests
+			int weighting = i % 2 == 0 ? 10 : 20;
+			m_weights.push_back(double(rand()) / double(RAND_MAX) * weighting);
+		}
+	}
+	Weights(int count) : m_count(count)
+	{
+		for (int i = 0; i < count; i++)
+		{
+			// because this weighting worked in first tests
+			int weighting = i % 2 == 0 ? 10 : 20;
+			m_weights.push_back(double(rand()) / double(RAND_MAX) * weighting);
+		}
+		int randInt = rand() % 2 + 4;
+		m_depth = randInt;
+	}
+	vector<double> m_weights;
+	int m_depth;
+	int m_count;
+};
 class Agent
 {
 public:
-	Agent(Board& board, Color color) :
-		m_board(board), m_color(color), m_maxDepth(3)
-	{
-		m_weights.resize(4);
-		m_weights[0] = double(rand()) / double(RAND_MAX) * 10;
-		m_weights[1] = double(rand()) / double(RAND_MAX) * 20;
-		m_weights[2] = double(rand()) / double(RAND_MAX) * 10;
-		m_weights[3] = double(rand()) / double(RAND_MAX) * 20;
-		m_weights[0] = double(rand()) / double(RAND_MAX) * 10;
-		m_weights[1] = double(rand()) / double(RAND_MAX) * 20;
-		m_weights[2] = double(rand()) / double(RAND_MAX) * 10;
-		m_weights[3] = double(rand()) / double(RAND_MAX) * 20;
-	}
 
+	Agent(Board& board, Color color) :
+		m_board(board), m_color(color), m_maxDepth(4), m_weights(4, 4)
+	{}
+	Agent(Board& board, Color color, Weights weights) :
+		m_board(board), m_color(color), m_maxDepth(weights.m_depth), m_weights(weights)
+	{}
+	Agent(const Agent& other) : 
+		m_board(other.m_board), m_color(other.m_color), m_weights(other.m_weights)
+	{}
+	
 	MoveSequence MiniMaxDecision()
 	{
 		double value = INT_MIN;
 		MoveSequence returnMoves;
 		auto myPieces = m_board.getPieces(m_color);
 		auto otherPieces = m_board.getPieces(Common::OtherColor(m_color));
+		bool first = true;
 		for (auto piece : myPieces)
 		{
 			for (auto move : piece.second->getMoves())
@@ -67,10 +96,11 @@ public:
 					tempValue = MaxValueAttackSeries(tempBoard, m_color, INT_MIN, INT_MAX, 1, tempMoves);					
 				}
 
-				if (tempValue > value)
+				if (tempValue > value || first)
 				{
 					value = tempValue;
 					returnMoves = tempMoves;
+					first = false;
 				}
 			}
 		}
@@ -295,25 +325,28 @@ public:
 		for (auto piece : board.getPieces(color))
 		{
 			if (piece.second->GetType() == PieceType::NORMAL)
-				fitness += m_weights[Common::WeightStart(color) % 4];
+				fitness += m_weights.m_weights[Common::WeightStart(color) % 4];
 			else
-				fitness += m_weights[(Common::WeightStart(color) + 1) % 4];
+				fitness += m_weights.m_weights[(Common::WeightStart(color) + 1) % 4];
 		}
 		for (auto piece : board.getPieces(Common::OtherColor(color)))
 		{
 			if (piece.second->GetType() == PieceType::NORMAL)
-				fitness -= m_weights[(Common::WeightStart(color) + 2) % 4];
+				fitness -= m_weights.m_weights[(Common::WeightStart(color) + 2) % 4];
 			else
-				fitness -= m_weights[(Common::WeightStart(color) + 3) % 4];
+				fitness -= m_weights.m_weights[(Common::WeightStart(color) + 3) % 4];
 		}
 		return fitness;
 	}
 	void Move()
 	{
 		auto moves = MiniMaxDecision();
+		if (moves.size() == 0)
+			m_board.recordNoMoves(m_color);
+
 		for (auto move : moves)
 		{
-			cout << "{{" << to_string(move.first.first) << "," << to_string(move.first.second) << "},{" << to_string(move.second.first) << "," << to_string(move.second.second) << "}},";
+			//cout << "{{" << to_string(move.first.first) << "," << to_string(move.first.second) << "},{" << to_string(move.second.first) << "," << to_string(move.second.second) << "}},";
 			m_board.Move(move.first, move.second, m_color);
 		}
 	}
@@ -387,102 +420,7 @@ public:
 		}
 	}
 	int m_maxDepth;
-	vector<double> m_weights;
-	Board& m_board;
-	Color m_color;
-};
-
-class RandomAgent
-{
-public:
-	RandomAgent(Board& board, Color color) :
-		m_board(board), m_color(color) {}
-
-	void Move()
-	{
-		auto allMoves = GetAllMoves();
-		if (allMoves.size() <= 0)
-		{
-			m_board.getPieces(m_color).clear();
-			cout << "Player " << ColorStrings[m_color] << " cannot move, game lost" << endl;
-		}
-		auto choice = rand() % allMoves.size();
-		auto pieceMoves = allMoves[choice];
-		for (auto move : pieceMoves)
-		{
-			cout << "{{" << to_string(move.first.first) << "," << to_string(move.first.second) << "},{" << to_string(move.second.first) << "," << to_string(move.second.second) << "}},";
-			assert(m_board.Move(move.first, move.second, m_color));
-		}
-	}
-	vector<MoveSequence> GetAllMoves()
-	{
-		vector<MoveSequence> allMoves;
-		const auto& myPieces = m_board.getPieces(m_color);
-		const auto& otherPieces = m_board.getPieces(Common::OtherColor(m_color));
-		for (auto piece : myPieces)
-		{
-			auto pos = piece.first;
-			auto moves = piece.second->getMoves();
-			for (auto move : moves)
-			{
-				MoveSequence pieceMoves;
-				auto newPos = Common::PositionPlusMove(pos, move);
-				if (otherPieces.find(newPos) == otherPieces.end() && myPieces.find(newPos) == myPieces.end() && m_board.PositionOnBoard(newPos))
-				{
-					pieceMoves.push_back({ pos, newPos });
-					allMoves.push_back(pieceMoves);
-					continue;
-				}
-
-				if (otherPieces.find(newPos) == otherPieces.end())
-					continue;
-				//found an opponent piece, try attack instead
-
-				newPos = Common::PositionPlusMove(pos, Common::AttackFromMove(move));
-				if (otherPieces.find(newPos) != otherPieces.end() || myPieces.find(newPos) != myPieces.end() || !m_board.PositionOnBoard(newPos))
-					continue;
-
-				pieceMoves.push_back({ pos, newPos });
-				auto tempBoard = m_board;
-				auto tempMyPieces = m_board.getPieces(m_color);
-				tempBoard.Move(pos, newPos, m_color);
-				GetAttackSeries(piece.second, newPos, allMoves, pieceMoves, tempBoard);
-			}
-
-		}
-		return allMoves;
-	}
-
-	void GetAttackSeries(
-		PieceBase* piece, Position currentPos,
-		vector<MoveSequence>& allMoves,
-		MoveSequence currentMoveSeries,
-		Board board)
-	{
-		auto myPieces = board.getPieces(m_color);
-		auto otherPieces = board.getPieces(Common::OtherColor(m_color));
-		for (auto move : piece->getAttackMoves())
-		{
-			auto moveSeriesCopy = currentMoveSeries;
-			auto newPos = Common::PositionPlusMove(currentPos, move);
-			if (otherPieces.find(newPos) == otherPieces.end()
-				&& myPieces.find(newPos) == myPieces.end()
-				&& m_board.PositionOnBoard(newPos)
-				&& otherPieces.find(Common::JumpedPosition(currentPos, newPos)) != otherPieces.end())
-			{
-				moveSeriesCopy.push_back({ currentPos, newPos });
-				auto tempBoard = board;
-				auto tempMyPieces = m_board.getPieces(m_color);
-				tempBoard.Move(currentPos, newPos, m_color);
-				GetAttackSeries(piece, newPos, allMoves, moveSeriesCopy, tempBoard);
-			}
-			else
-			{
-				if (moveSeriesCopy.size() > 0)
-					allMoves.push_back(moveSeriesCopy);
-			}
-		}
-	}
+	Weights m_weights;
 	Board& m_board;
 	Color m_color;
 };

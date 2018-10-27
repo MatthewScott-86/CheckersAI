@@ -10,7 +10,7 @@ using PieceCollection = map<Position, PieceBase*>;
 class Board
 {
 public:
-	Board() : m_size(8) 
+	Board() : m_size(8), m_moveCount(0), m_noMoves(false)
 	{
 		for (int i = 0; i < 4; i++)
 		{
@@ -25,7 +25,6 @@ public:
 			}
 		}
 	}
-	
 	PieceCollection& getPieces(Color col)
 	{
 		if (Color::RED == col)
@@ -34,6 +33,7 @@ public:
 			return m_blackPieces;
 		throw runtime_error("Invalid Color Piece Requested");
 	}
+
 	bool Upgrade(Color color, Position pos)
 	{
 		if (color == Color::RED && pos.second == 7)
@@ -42,11 +42,11 @@ public:
 			return true;
 		return false;
 	}
+
 	void MovePiece(PieceCollection& pieces, Position start, Position end)
 	{
 		auto piece = pieces.find(start);
-		assert(piece != pieces.end()); //throw runtime_error("Invalid Piece Selection");
-
+		assert(piece != pieces.end());
 
 		auto newPiece = piece->second->Clone();
 		if (Upgrade(newPiece->m_color, end))
@@ -55,9 +55,10 @@ public:
 		}
 		newPiece->m_pos = end;
 		pieces[end] = newPiece;
-		pieces.erase(piece);
-
+		pieces.erase(start);
+		m_moveCount++;
 	}
+
 	bool Move(Position start, Position end, Color col)
 	{
 		auto& pieces = getPieces(col);
@@ -127,7 +128,24 @@ public:
 		cout << endl;
 		cout << endl;
 	}
+
+	void recordNoMoves(Color color)
+	{
+		getPieces(color).clear();
+		m_noMoves = true;
+	}
+
+	Color getWinner()
+	{
+		if (m_redPieces.size() == 0)
+			return Color::BLACK;
+		if (m_blackPieces.size() == 0)
+			return Color::RED;
+		return Color::NO_COLOR;
+	}
 	PieceCollection m_redPieces;
 	PieceCollection m_blackPieces;
 	int m_size;
+	int m_moveCount;
+	bool m_noMoves;
 };
