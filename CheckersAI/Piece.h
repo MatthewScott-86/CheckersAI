@@ -7,32 +7,27 @@
 class IPiece
 {
 	virtual IPiece* Clone() = 0; 
-	virtual IPiece* Upgrade() = 0;
 	virtual PieceType GetType() = 0;
 	virtual vector<Position> getMoves() = 0;
 	virtual vector<Position> getAttackMoves() = 0;
 	virtual string ToString() = 0;
+	virtual bool NeedsUpgrade() = 0;
 };
 
 class PieceBase : public IPiece
 {
 public:
-	PieceBase() : m_pos({ -1, -1 }), m_color(Color::NO_COLOR) {}
+	PieceBase() : m_color(Color::NO_COLOR) {}
 
-	PieceBase(Position pos, Color col, int direction) :
-		m_pos(pos), m_color(col), m_direction(direction) {}
-
-	PieceBase(int x, int y, Color col, int direction) :
-		m_pos({ x, y }), m_color(col), m_direction(direction) {}
-
+	PieceBase(Color col, int direction) :
+		m_color(col), m_direction(direction) {}
 	virtual PieceBase* Clone() override	{ throw runtime_error("Can't be here");	}
-	virtual PieceBase* Upgrade() override { throw runtime_error("Can't be here"); }
 	virtual PieceType GetType() override { throw runtime_error("Can't be here"); }
 	virtual vector<Position> getMoves() override { throw runtime_error("Cant be here");	}
 	virtual vector<Position> getAttackMoves() override { throw runtime_error("Cant be here"); }	
 	virtual string ToString() override { throw runtime_error("Cant be here"); }
+	virtual bool NeedsUpgrade() override { throw runtime_error("Cant be here"); }
 
-	Position m_pos;
 	Color m_color;
 	int m_direction;
 };
@@ -40,16 +35,11 @@ public:
 class KingPiece : public PieceBase
 {
 public:
-	KingPiece(int x, int y, Color col, int direction)
-		: PieceBase(x, y, col, direction) {}
+	KingPiece(Color col, int direction)
+		: PieceBase(col, direction) {}
 
 	virtual PieceBase* Clone() override	{ 
-		//return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction);
-		return this;
-	}
-	virtual PieceBase* Upgrade() override { 
-		//return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction);
-		return this;
+		return new KingPiece(m_color, m_direction);
 	}
 	virtual PieceType GetType() override { return PieceType::KING; }
 	virtual vector<Position> getMoves() override
@@ -70,23 +60,18 @@ public:
 		moves.emplace_back(-2, -2);
 		return moves;
 	}
+	virtual bool NeedsUpgrade() override { return false; }
 	virtual string ToString() override { return PieceTypeStrings[PieceType::KING] + string(ColorStrings[m_color]); }
 };
 
 class NormalPiece : public PieceBase
 {
 public:
-	NormalPiece(int x, int y, Color col, int direction)
-		: PieceBase(x, y, col, direction) {}
+	NormalPiece(Color col, int direction)
+		: PieceBase(col, direction) {}
 
 	virtual PieceBase* Clone() override { 
-		return this;
-		/*return new NormalPiece(m_pos.first, m_pos.second, m_color, m_direction);
-		return static_cast<NormalPiece*>(this);*/
-	}
-	virtual PieceBase* Upgrade() override { 
-		return new KingPiece(m_pos.first, m_pos.second, m_color, m_direction);
-		//return reinterpret_cast<KingPiece*>(this);
+		return new NormalPiece(m_color, m_direction);
 	}
 	virtual PieceType GetType() override { return PieceType::NORMAL; }
 	virtual vector<Position> getMoves() override
@@ -103,5 +88,6 @@ public:
 		moves.emplace_back(-2, m_direction * 2);
 		return moves;
 	}
+	virtual bool NeedsUpgrade() override { return true; }
 	virtual string ToString() override { return PieceTypeStrings[PieceType::NORMAL] + string(ColorStrings[m_color]); }
 };

@@ -6,8 +6,8 @@ void runSoloMatch()
 	srand(1234567890);
 	auto board = Board();
 	board.Print();
-	auto agentR = Agent(board, Color::RED);
-	auto agentB = RandomAgent(board, Color::BLACK);
+	auto agentB = Agent(board, Color::BLACK, Weights({ 0.3595,	2.2327,	3.0226,	11.8821 }, 4));
+	auto agentR = Agent(board, Color::RED, Weights({ 3.14066,18.8214,2.86081,6.72628 },4));
 
 	int i = 0;
 	while (true)
@@ -52,6 +52,11 @@ vector<double> Tournament(Weights agentWeights[], int size)
 			int turn = 0;
 			while (true)
 			{
+				if (board.m_moveCount > 200)
+				{
+					board.m_noMoves = true;
+					break;
+				}
 				if (!board.NoWinner())
 					break;
 
@@ -70,18 +75,21 @@ vector<double> Tournament(Weights agentWeights[], int size)
 
 				turn++;
 			}
-
+			if (board.m_noMoves)
+			{
+				continue;
+			}
 			// if agent wins, gets win bonus, plus bonus for less moves
 			//  otherwise bonus is based on number of moves only at a max of the win bonus
 			if (board.getWinner() == black.m_color)
 			{
-				fitnesses[i] = (WIN_BONUS + max(WIN_BONUS - board.m_moveCount, 0));
-				fitnesses[j] = min(board.m_moveCount, WIN_BONUS);
+				fitnesses[i] += (WIN_BONUS + max(WIN_BONUS - board.m_moveCount, 0));
+				fitnesses[j] += min(board.m_moveCount, WIN_BONUS);
 			}
 			else
 			{
-				fitnesses[j] = (WIN_BONUS + max(WIN_BONUS - board.m_moveCount, 0));
-				fitnesses[i] = min(board.m_moveCount, WIN_BONUS);
+				fitnesses[j] += (WIN_BONUS + max(WIN_BONUS - board.m_moveCount, 0));
+				fitnesses[i] += min(board.m_moveCount, WIN_BONUS);
 			}
 		}
 	}
@@ -97,8 +105,9 @@ static Weights agents[] = {
 
 int main()
 {
+	//runSoloMatch();
 	Weights testWeights({ 0.3595,	2.2327,	3.0226,	11.8821	}, 4);
-	GenAlgo genAlgo(testWeights);
+	/*GenAlgo genAlgo(testWeights);
 	
 	for (int i = 0; i < 100; i++)
 	{
@@ -107,16 +116,31 @@ int main()
 		genAlgo.CrossOver();
 		genAlgo.Mutation();
 	}
-	Weights tournamentWeights[WINNER_POOL_SIZE + 1];
+	*/Weights tournamentWeights[WINNER_POOL_SIZE + 1];
 	tournamentWeights[0] = testWeights;
-	for (int i = 0; i < WINNER_POOL_SIZE; i++)
+	/*for (int i = 0; i < WINNER_POOL_SIZE; i++)
 	{
 		tournamentWeights[i + 1] = genAlgo.m_bestWeights[i];
-	}
-	
+	}*/
+	tournamentWeights[1] = Weights({ 1.978514969,
+		16.84316538,
+		1.233252968,
+		2.198553423 }, 4);
+
+	tournamentWeights[2] = Weights({ 7.690664388,
+		8.214362011,
+		2.019714957,
+		12.5614185 }, 4);
+
+
+	tournamentWeights[3] = Weights({ 2.52723777,
+		2.889492477,
+		0.01617481,
+		1.220130009 }, 4);
+
 	auto fitnesses = Tournament(tournamentWeights, WINNER_POOL_SIZE + 1);
 
-	genAlgo.PrintBestAgent();
+	//genAlgo.PrintBestAgent();
 	for (auto fitness : fitnesses)
 		cout << fitness << endl;
 

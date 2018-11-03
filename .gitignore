@@ -1,3 +1,9 @@
+#TestData
+CheckerAIUnitTest\
+CheckersAITest\
+CheckerAIUnitTest/
+CheckersAITest/
+
 # Prerequisites
 *.d
 

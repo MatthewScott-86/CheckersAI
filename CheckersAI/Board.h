@@ -20,10 +20,20 @@ public:
 				int blackY = 7 - y;
 				int blackX = y % 2 == 0 ? x + 1 : x;
 				int redX = y % 2 == 0 ? x : x + 1;
-				m_redPieces[{ redX, y }]		= new NormalPiece(redX, y, Color::RED, 1);
-				m_blackPieces[{blackX, blackY}] = new NormalPiece(blackX, blackY, Color::BLACK, -1);
+				m_redPieces[{ redX, y }]		= new NormalPiece(Color::RED, 1);
+				m_blackPieces[{blackX, blackY}] = new NormalPiece(Color::BLACK, -1);
 			}
 		}
+	}
+	Board(const Board& other)
+	{
+		for (auto it : other.m_blackPieces)
+			m_blackPieces[it.first] = it.second->Clone();
+		for (auto it : other.m_redPieces)
+			m_redPieces[it.first] = it.second->Clone();
+		m_size = other.m_size;
+		m_moveCount = other.m_moveCount;
+		m_noMoves = other.m_noMoves;
 	}
 	PieceCollection& getPieces(Color col)
 	{
@@ -34,12 +44,16 @@ public:
 		throw runtime_error("Invalid Color Piece Requested");
 	}
 
-	bool Upgrade(Color color, Position pos)
+	bool Upgrade(PieceBase* piece, Position pos)
 	{
-		if (color == Color::RED && pos.second == 7)
+		if (!piece->NeedsUpgrade())
+			return false;
+
+		if (piece->m_color == Color::RED && pos.second == 7)
 			return true;
-		if (color == Color::BLACK && pos.second == 0)
+		if (piece->m_color == Color::BLACK && pos.second == 0)
 			return true;
+
 		return false;
 	}
 
@@ -48,13 +62,13 @@ public:
 		auto piece = pieces.find(start);
 		assert(piece != pieces.end());
 
-		auto newPiece = piece->second->Clone();
-		if (Upgrade(newPiece->m_color, end))
+		pieces[end] = move(pieces[start]);
+		if (Upgrade(pieces[end], end))
 		{
-			newPiece = piece->second->Upgrade();
+			PieceBase* oldPiece = pieces[end];
+			pieces[end] = new KingPiece(oldPiece->m_color, oldPiece->m_direction);
+			delete oldPiece;
 		}
-		newPiece->m_pos = end;
-		pieces[end] = newPiece;
 		pieces.erase(start);
 		m_moveCount++;
 	}
@@ -84,7 +98,8 @@ public:
 			if (otherPiece == otherPieces.end())
 				return false;
 
-			otherPieces.erase(otherPiece);
+			delete otherPiece->second;
+			otherPieces.erase(otherPiece->first);
 			MovePiece(pieces, start, end);
 			return true;
 		}
@@ -142,6 +157,15 @@ public:
 		if (m_blackPieces.size() == 0)
 			return Color::RED;
 		return Color::NO_COLOR;
+	}
+	~Board()
+	{
+		for (auto it : m_blackPieces)
+			delete it.second;
+		for (auto it : m_redPieces)
+			delete it.second;
+		m_blackPieces.clear();
+		m_redPieces.clear();
 	}
 	PieceCollection m_redPieces;
 	PieceCollection m_blackPieces;

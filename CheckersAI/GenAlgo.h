@@ -2,6 +2,8 @@
 #include "Agent.h"
 #include "RandomAgent.h"
 #include <numeric>
+#include <fstream>
+
 #define POOL_SIZE 100
 #define CROSS_OVER_RATE 0.9
 #define MUTATION_RATE 0.05
@@ -30,6 +32,9 @@ public:
 		m_depthLowerBound = 4;
 		m_depthUpperBound = 5;
 		fill(m_bestFitnesses, m_bestFitnesses + WINNER_POOL_SIZE, -1);
+
+		reportStream.open(R"(C:\Users\Matt\Desktop\CS664\CS663_FinalProject_MatthewScott\Tournament3.txt)", std::ostream::out);
+		reportStream << "Candidate,Weight1,Weight2,Weight3,Weight4,MaxDepth,MoveCount,WL,Fitness" << endl;
 	};
 
 	void UpdateFitness(Weights weights, double fitness)
@@ -63,31 +68,48 @@ public:
 			auto board = Board();
 			auto candidateAgent = Agent(board, Color::BLACK, m_candidateWeights[i]);
 			auto testAgent = Agent(board, Color::RED, m_testWeights);
-
+			reportStream << i;
+			for (int j = 0; j < m_candidateWeights[i].m_weights.size(); j++)
+				reportStream << "," << m_candidateWeights[i].m_weights[j];
+			reportStream << "," << m_candidateWeights[i].m_depth << ",";
 			while (true)
 			{
 				if (board.m_moveCount > WIN_BONUS)
 					board.getPieces(Color::BLACK).clear();
-
+				
 				if (!board.NoWinner())
 					break;
 				candidateAgent.Move();
+				//cout << endl;
+				//board.Print();
+
+				//cout << endl;
 
 				if (!board.NoWinner())
 					break;
 				testAgent.Move();
+				//board.Print();
 			}
 
+			reportStream << board.m_moveCount;
 			// if agent wins, gets win bonus, plus bonus for less moves
 			//  otherwise bonus is based on number of moves only at a max of the win bonus
 			if (board.getWinner() == candidateAgent.m_color)
+			{
+				reportStream << ",W,";
 				fitness += (WIN_BONUS + max(WIN_BONUS - board.m_moveCount, 0));
+			}
 			else
+			{
+				reportStream << ",L,";
 				fitness += min(board.m_moveCount, WIN_BONUS);
+			}
 
 			if (board.m_noMoves && board.getWinner() == candidateAgent.m_color)
 				fitness = max(double(0), fitness - NO_MOVES_PENALTY);
 			
+			reportStream << fitness << endl;
+
 			fitnessRef[i] = fitness;
 			totalFitness += fitness;
 
@@ -214,5 +236,5 @@ public:
 	int m_depthUpperBound;
 	int m_depthLowerBound;
 	int m_weightCount;
-
+	ofstream reportStream;
 };
