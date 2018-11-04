@@ -107,7 +107,7 @@ int main()
 {
 	//runSoloMatch();
 	Weights testWeights({ 0.3595,	2.2327,	3.0226,	11.8821	}, 4);
-	/*GenAlgo genAlgo(testWeights);
+	GenAlgo genAlgo(testWeights);
 	
 	for (int i = 0; i < 100; i++)
 	{
@@ -116,13 +116,13 @@ int main()
 		genAlgo.CrossOver();
 		genAlgo.Mutation();
 	}
-	*/Weights tournamentWeights[WINNER_POOL_SIZE + 1];
+	Weights tournamentWeights[WINNER_POOL_SIZE + 1];
 	tournamentWeights[0] = testWeights;
-	/*for (int i = 0; i < WINNER_POOL_SIZE; i++)
+	for (int i = 0; i < WINNER_POOL_SIZE; i++)
 	{
 		tournamentWeights[i + 1] = genAlgo.m_bestWeights[i];
-	}*/
-	tournamentWeights[1] = Weights({ 1.978514969,
+	}
+	/*tournamentWeights[1] = Weights({ 1.978514969,
 		16.84316538,
 		1.233252968,
 		2.198553423 }, 4);
@@ -136,7 +136,7 @@ int main()
 	tournamentWeights[3] = Weights({ 2.52723777,
 		2.889492477,
 		0.01617481,
-		1.220130009 }, 4);
+		1.220130009 }, 4);*/
 
 	auto fitnesses = Tournament(tournamentWeights, WINNER_POOL_SIZE + 1);
 

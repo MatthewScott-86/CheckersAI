@@ -1,41 +1,13 @@
 #pragma once
 #include "Board.h"
+#include "Weights.h"
 #include <algorithm>
 #include <random>
 
-using MoveSequence = vector<pair<Position, Position>>;
-class Weights
-{
-public:
-	Weights()
-	{
+#define FLOAT_EPSILON 1e-4f
 
-	}
-	Weights(vector<double> weights, int depth) : m_weights(weights), m_count(weights.size()), m_depth(depth) {}
-	Weights(int count, int depth) : m_count(count), m_depth(depth)
-	{
-		for (int i = 0; i < count; i++)
-		{
-			// because this weighting worked in first tests
-			int weighting = i % 2 == 0 ? 10 : 20;
-			m_weights.push_back(double(rand()) / double(RAND_MAX) * weighting);
-		}
-	}
-	Weights(int count) : m_count(count)
-	{
-		for (int i = 0; i < count; i++)
-		{
-			// because this weighting worked in first tests
-			int weighting = i % 2 == 0 ? 10 : 20;
-			m_weights.push_back(double(rand()) / double(RAND_MAX) * weighting);
-		}
-		int randInt = rand() % 2 + 4;
-		m_depth = randInt;
-	}
-	vector<double> m_weights;
-	int m_depth;
-	int m_count;
-};
+using MoveSequence = vector<pair<Position, Position>>;
+
 class Agent
 {
 public:
@@ -76,7 +48,7 @@ public:
 					auto moveTest = tempBoard.Move(pos, newPos, m_color);
 					assert(moveTest);
 					tempMoves.push_back({ pos, newPos });
-					tempValue = MaxValue(tempBoard, Common::OtherColor(m_color), INT_MIN, INT_MAX, 1);
+					tempValue = MinValue(tempBoard, Common::OtherColor(m_color), INT_MIN, INT_MAX, 1);
 				}
 				else
 				{
@@ -102,6 +74,15 @@ public:
 					returnMoves = tempMoves;
 					first = false;
 				}
+				else
+				{
+					auto randNum = float(rand()) / float(RAND_MAX);
+					if (tempValue + FLOAT_EPSILON > value && randNum > 0.5)
+					{
+						value = tempValue;
+						returnMoves = tempMoves;
+					}
+				}
 			}
 		}
 		return returnMoves;
@@ -111,7 +92,7 @@ public:
 	{
 		double value = INT_MIN;
 		if (!board.NoWinner() || depth >= m_maxDepth)
-			return Fitness(board, color);
+			return Fitness(board, m_color);
 
 		auto myPieces = board.getPieces(color);
 		auto otherPieces = board.getPieces(Common::OtherColor(color));
@@ -168,7 +149,7 @@ public:
 	{
 		double value = INT_MIN;
 		if (!board.NoWinner() || depth >= m_maxDepth)
-			return Fitness(board, color);
+			return Fitness(board, m_color);
 
 		auto currentPos = moves.back().second;
 		auto myPieces = board.getPieces(color);
@@ -217,7 +198,7 @@ public:
 	{
 		double value = INT_MAX;
 		if (!board.NoWinner() || depth >= m_maxDepth)
-			return Fitness(board, color);
+			return Fitness(board, m_color);
 
 		auto myPieces = board.getPieces(color);
 		auto otherPieces = board.getPieces(Common::OtherColor(color));
@@ -274,7 +255,7 @@ public:
 	{
 		double value = INT_MAX;
 		if (!board.NoWinner() || depth >= m_maxDepth)
-			return Fitness(board, color);
+			return Fitness(board, m_color);
 
 		auto currentPos = moves.back().second;
 		auto myPieces = board.getPieces(color);
@@ -310,7 +291,7 @@ public:
 		}
 		if (!attacked)
 		{
-			auto tempValue = MinValue(board, Common::OtherColor(color), alpha, beta, depth + 1);
+			auto tempValue = MaxValue(board, Common::OtherColor(color), alpha, beta, depth + 1);
 			if (tempValue < value)
 				value = tempValue;
 		}
@@ -329,6 +310,7 @@ public:
 			else
 				fitness += m_weights.m_weights[(Common::WeightStart(color) + 1) % 4];
 		}
+
 		for (auto piece : board.getPieces(Common::OtherColor(color)))
 		{
 			if (piece.second->GetType() == PieceType::NORMAL)

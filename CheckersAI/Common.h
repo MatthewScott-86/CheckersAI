@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <string>
+
 using namespace std;
 enum PieceType
 {
@@ -30,6 +33,10 @@ static const char* ColorStrings[]
 	"R",
 	"B"
 };
+
+
+
+
 class Common
 {
 public:
@@ -42,5 +49,8 @@ public:
 	}
 	static Position AttackFromMove(Position pos) { return Position{ pos.first * 2, pos.second * 2 }; }
 	static Position PositionPlusMove(Position pos, Position move) { return Position{ pos.first + move.first, pos.second + move.second }; }
+
+
+
 };
 
