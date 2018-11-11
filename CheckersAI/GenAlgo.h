@@ -33,7 +33,7 @@ public:
 		m_depthUpperBound = 5;
 		fill(m_bestFitnesses, m_bestFitnesses + WINNER_POOL_SIZE, -1);
 
-		reportStream.open(R"(C:\Users\Matt\Desktop\CS664\CS663_FinalProject_MatthewScott\Tournament4.txt)", std::ostream::out);
+		reportStream.open(R"(C:\Users\Matt\Desktop\CS664\CS663_FinalProject_MatthewScott\Tournament6.txt)", std::ostream::out);
 		reportStream << "Candidate,Weight1,Weight2,Weight3,Weight4,MaxDepth,MoveCount,WL,Fitness" << endl;
 	};
 
@@ -97,12 +97,12 @@ public:
 			if (board.getWinner() == candidateAgent.m_color)
 			{
 				reportStream << ",W,";
-				fitness += (WIN_BONUS + max(WIN_BONUS - board.m_moveCount, 0));
+				fitness += (WIN_BONUS + max(WIN_BONUS + int(board.getPieces(candidateAgent.m_color).size()) * 10, 0));
 			}
 			else
 			{
 				reportStream << ",L,";
-				fitness += min(board.m_moveCount, WIN_BONUS);
+				fitness += min(120 - int(board.getPieces(Common::OtherColor(candidateAgent.m_color)).size()) * 10, WIN_BONUS);
 			}
 
 			if (board.m_noMoves && board.getWinner() == candidateAgent.m_color)

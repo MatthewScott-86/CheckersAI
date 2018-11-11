@@ -37,7 +37,7 @@ void runSoloMatch()
 
 
 
-vector<double> Tournament(Weights agentWeights[], int size)
+vector<double> Tournament(Weights agentWeights[], int size, int moveCountMax = 200)
 {
 	vector<double> fitnesses(size, 0);
 
@@ -52,7 +52,7 @@ vector<double> Tournament(Weights agentWeights[], int size)
 			int turn = 0;
 			while (true)
 			{
-				if (board.m_moveCount > 200)
+				if (board.m_moveCount > moveCountMax)
 				{
 					board.m_noMoves = true;
 					break;
@@ -100,13 +100,72 @@ static Weights agents[] = {
 	Weights({ 0.3595,	2.2327,		3.0226,		11.8821 }, 4),	// First Agent
 	Weights({ 1.97851,	16.8432,	1.23325,	2.19855 }, 4),	// winners 1
 	Weights({ 7.69066,	8.21436,	2.01971,	12.5614 }, 4),	// winners 1
-	Weights({ 2.52724,	2.88949,	0.0161748,	1.22013 }, 4)	// winners 1
+	Weights({ 2.52724,	2.88949,	0.0161748,	1.22013 }, 4),	// winners 1
+	Weights({5.99048,	6.71896,	7.35008,	16.1748	}, 4),  // winners 4 (first no bugs tournament)
+	Weights({7.33085,	16.6924,	8.39442,	13.9952	}, 4),	// winners 4 (first no bugs tournament)
+	Weights({7.33085,	6.71896,	8.02606,	10.3977	}, 5),	// winners 4 (first no bugs tournament)
+	Weights({4.79873,	7.00583,	8.95962,	16.4568 }, 4),  // winners 5 (piece based fitness function)
+	Weights({6.07685,	2.90353,	9.8178,		12.3997 }, 5),  // winners 5 (piece based fitness function)
+	Weights({7.32017,	16.8731,	9.94629,	11.4518 }, 5),   // winners 5 (piece based fitness function)
+	Weights({ 1.31626,	9.83795,	6.85629,	6.72628	}, 4), //winners 6 (against last winner)
+	Weights({ 3.83007,	0.0854518,	4.1792,		1.64495	}, 5), //winners 6 (against last winner)
+	Weights({ 6.57308,	14.8656,	9.5172,		15.7073	}, 4)  //winners 6 (against last winner)
+
 };
+
+void RunTournamentFour()
+{
+	Weights testWeights({ 0.3595,	2.2327,	3.0226,	11.8821 }, 4);
+	Weights tournamentWeights[WINNER_POOL_SIZE + 1];
+	tournamentWeights[0] = testWeights;
+	for (int i = 0; i < WINNER_POOL_SIZE; i++)
+	{
+		tournamentWeights[i + 1] = agents[i + 4];
+	}
+	auto fitnesses = Tournament(tournamentWeights, WINNER_POOL_SIZE + 1, 1000);
+
+	for (auto fitness : fitnesses)
+		cout << fitness << endl;
+}
+
+void RunTournamentFive()
+{
+	Weights testWeights({ 0.3595,	2.2327,	3.0226,	11.8821 }, 4);
+	Weights tournamentWeights[WINNER_POOL_SIZE + 1];
+	tournamentWeights[0] = testWeights;
+	for (int i = 0; i < WINNER_POOL_SIZE; i++)
+	{
+		tournamentWeights[i + 1] = agents[i + 7];
+	}
+	auto fitnesses = Tournament(tournamentWeights, WINNER_POOL_SIZE + 1, 1000);
+
+	for (auto fitness : fitnesses)
+		cout << fitness << endl;
+
+}
+
+void RunTournamentSix()
+{
+	Weights testWeights({ 6.07685,	2.90353,	9.8178,		12.3997 }, 5);
+	Weights tournamentWeights[WINNER_POOL_SIZE + 1];
+	tournamentWeights[0] = testWeights;
+	for (int i = 0; i < WINNER_POOL_SIZE; i++)
+	{
+		tournamentWeights[i + 1] = agents[i + 10];
+	}
+	auto fitnesses = Tournament(tournamentWeights, WINNER_POOL_SIZE + 1, 1000);
+
+	for (auto fitness : fitnesses)
+		cout << fitness << endl;
+
+}
 
 int main()
 {
 	//runSoloMatch();
-	Weights testWeights({ 0.3595,	2.2327,	3.0226,	11.8821	}, 4);
+	//RunTournamentSix();
+
+	Weights testWeights({ 6.07685,	2.90353,	9.8178,		12.3997 }, 5);
 	GenAlgo genAlgo(testWeights);
 	
 	for (int i = 0; i < 100; i++)
@@ -121,26 +180,13 @@ int main()
 	for (int i = 0; i < WINNER_POOL_SIZE; i++)
 	{
 		tournamentWeights[i + 1] = genAlgo.m_bestWeights[i];
+		//tournamentWeights[i + 1] = agents[i + 4];
 	}
-	/*tournamentWeights[1] = Weights({ 1.978514969,
-		16.84316538,
-		1.233252968,
-		2.198553423 }, 4);
-
-	tournamentWeights[2] = Weights({ 7.690664388,
-		8.214362011,
-		2.019714957,
-		12.5614185 }, 4);
-
-
-	tournamentWeights[3] = Weights({ 2.52723777,
-		2.889492477,
-		0.01617481,
-		1.220130009 }, 4);*/
+	
 
 	auto fitnesses = Tournament(tournamentWeights, WINNER_POOL_SIZE + 1);
 
-	//genAlgo.PrintBestAgent();
+	genAlgo.PrintBestAgent();
 	for (auto fitness : fitnesses)
 		cout << fitness << endl;
 
