@@ -12,11 +12,8 @@ class Agent
 {
 public:
 
-	Agent(Board& board, Color color) :
-		m_board(board), m_color(color), m_maxDepth(4), m_weights(4, 4)
-	{}
-	Agent(Board& board, Color color, Weights weights) :
-		m_board(board), m_color(color), m_maxDepth(weights.m_depth), m_weights(weights)
+	Agent(Board& board, Color color, IWeight* weights) :
+		m_board(board), m_color(color), m_maxDepth(5), m_weights(weights)
 	{}
 	Agent(const Agent& other) : 
 		m_board(other.m_board), m_color(other.m_color), m_weights(other.m_weights)
@@ -306,17 +303,32 @@ public:
 		for (auto piece : board.getPieces(color))
 		{
 			if (piece.second->GetType() == PieceType::NORMAL)
-				fitness += m_weights.m_weights[Common::WeightStart(color) % 4];
+				fitness += m_weights->getWeight(Common::WeightStart(color) % 4);
 			else
-				fitness += m_weights.m_weights[(Common::WeightStart(color) + 1) % 4];
+				fitness += m_weights->getWeight((Common::WeightStart(color) + 1) % 4);
 		}
 
 		for (auto piece : board.getPieces(Common::OtherColor(color)))
 		{
 			if (piece.second->GetType() == PieceType::NORMAL)
-				fitness -= m_weights.m_weights[(Common::WeightStart(color) + 2) % 4];
+				fitness -= m_weights->getWeight((Common::WeightStart(color) + 2) % 4);
 			else
-				fitness -= m_weights.m_weights[(Common::WeightStart(color) + 3) % 4];
+				fitness -= m_weights->getWeight((Common::WeightStart(color) + 3) % 4);
+		}
+
+		if (m_weights->getWeightCount() > 4)
+		{
+			auto pieces = board.getPieces(color);
+			auto otherPieces = board.getPieces(Common::OtherColor(color));
+
+			for (int i = 4; i < m_weights->getWeightCount(); i++)
+			{
+				auto weightMap = i - 4;
+				if (pieces.find(m_weightToPosMap[weightMap]) != pieces.end())
+					fitness += m_weights->getWeight(i);
+				if (otherPieces.find(m_weightToPosMap[weightMap]) != otherPieces.end())
+					fitness -= m_weights->getWeight(i);
+			}
 		}
 		return fitness;
 	}
@@ -332,9 +344,42 @@ public:
 			m_board.Move(move.first, move.second, m_color);
 		}
 	}
-	
+	vector<Position> m_weightToPosMap = { 
+		{ 0,0 },
+		{ 0,2 },
+		{ 0,4 },
+		{ 0,6 },
+		{ 1,1 },
+		{ 1,3 },
+		{ 1,5 },
+		{ 1,7 },
+		{ 2,0 },
+		{ 2,2 },
+		{ 2,4 },
+		{ 2,6 },
+		{ 3,1 },
+		{ 3,3 },
+		{ 3,5 },
+		{ 3,7 },
+		{ 4,0 },
+		{ 4,2 },
+		{ 4,4 },
+		{ 4,6 },
+		{ 5,1 },
+		{ 5,3 },
+		{ 5,5 },
+		{ 5,7 },
+		{ 6,0 },
+		{ 6,2 },
+		{ 6,4 },
+		{ 6,6 },
+		{ 7,1 },
+		{ 7,3 },
+		{ 7,5 },
+		{ 7,7 }
+	};
 	int m_maxDepth;
-	Weights m_weights;
+	IWeight* m_weights;
 	Board& m_board;
 	Color m_color;
 };
