@@ -158,11 +158,11 @@ public:
 		}
 	}
 
-	void Mutation()
+	void Mutation(int searchIteration, int maxIteration)
 	{
 		for (int i = 0; i < POOL_SIZE; i++)
 		{
-			m_selectedWeights[i]->Mutate(MUTATION_RATE, DEPTH_MUTATION_RATE);
+			m_selectedWeights[i]->Mutate(MUTATION_RATE, searchIteration, maxIteration);
 		}
 	}
 	void PrintBestAgent()

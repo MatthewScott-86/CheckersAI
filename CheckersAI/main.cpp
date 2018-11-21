@@ -192,7 +192,7 @@ int main()
 		cout << "Tournament " << i << endl;
 		genAlgo.Selection();
 		genAlgo.CrossOver();
-		genAlgo.Mutation();
+		genAlgo.Mutation(i, 100);
 	}
 	IWeight* tournamentWeights[WINNER_POOL_SIZE + 1];
 	tournamentWeights[0] = &testWeights;
