@@ -124,7 +124,7 @@ static PieceWeights agents[] = {
 	PieceWeights({7.33085,	6.71896,	8.02606,	10.3977	}, 5),	// winners 4 (first no bugs tournament)
 	PieceWeights({4.79873,	7.00583,	8.95962,	16.4568 }, 4),  // winners 5 (piece based fitness function)
 	PieceWeights({6.07685,	2.90353,	9.8178,		12.3997 }, 5),  // winners 5 (piece based fitness function)
-	PieceWeights({7.32017,	16.8731,	9.94629,	11.4518 }, 5),   // winners 5 (piece based fitness function)
+	PieceWeights({7.32017,	16.8731,	9.94629,	11.4518 }, 5),  // winners 5 (piece based fitness function)
 	PieceWeights({ 1.31626,	9.83795,	6.85629,	6.72628	}, 4), //winners 6 (against last winner)
 	PieceWeights({ 3.83007,	0.0854518,	4.1792,		1.64495	}, 5), //winners 6 (against last winner)
 	PieceWeights({ 6.57308,	14.8656,	9.5172,		15.7073	}, 4)  //winners 6 (against last winner)
@@ -184,6 +184,7 @@ int main()
 	//runSoloMatch();
 	//RunTournamentSix();
 
+	/**/
 	PieceWeights testWeights({ 6.07685,	2.90353,	9.8178,		12.3997 }, 5);
 	GenAlgo genAlgo(&testWeights);
 	

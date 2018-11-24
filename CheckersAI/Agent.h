@@ -26,6 +26,8 @@ public:
 		auto myPieces = m_board.getPieces(m_color);
 		auto otherPieces = m_board.getPieces(Common::OtherColor(m_color));
 		bool first = true;
+		bool attack = false;
+		
 		for (auto piece : myPieces)
 		{
 			for (auto move : piece.second->getMoves())
@@ -41,6 +43,10 @@ public:
 					&& myPieces.find(newPos) == myPieces.end()
 					&& m_board.PositionOnBoard(newPos))
 				{
+					// forced capture
+					if (attack)
+						continue;
+
 					//empty board square
 					auto moveTest = tempBoard.Move(pos, newPos, m_color);
 					assert(moveTest);
@@ -58,6 +64,13 @@ public:
 						|| myPieces.find(newPos) != myPieces.end()
 						|| !m_board.PositionOnBoard(newPos))
 						continue;
+
+					// forced capture
+					if (!attack)
+					{
+						attack = true;
+						first = true;
+					}
 
 					tempMoves.push_back({ pos, newPos });
 					auto moveTest = tempBoard.Move(pos, newPos, m_color);
@@ -93,7 +106,9 @@ public:
 
 		auto myPieces = board.getPieces(color);
 		auto otherPieces = board.getPieces(Common::OtherColor(color));
-		
+		bool firstAttack = false;
+		bool attack = false;
+
 		for (auto piece : myPieces)
 		{
 			for (auto move : piece.second->getMoves())
@@ -109,10 +124,12 @@ public:
 					&& myPieces.find(newPos) == myPieces.end()
 					&& board.PositionOnBoard(newPos))
 				{
+					//forced capture
+					if (attack)
+						continue;
 					//empty board square
 					auto moveTest = tempBoard.Move(pos, newPos, color);
 					assert(moveTest);
-					//tempBoard.Print();
 					tempValue = MinValue(tempBoard, Common::OtherColor(color), INT_MIN, INT_MAX, depth + 1);
 				}
 				else
@@ -127,15 +144,24 @@ public:
 						|| !board.PositionOnBoard(newPos))
 						continue;
 
+					if (!attack)
+					{
+						attack = true;
+						firstAttack = true;
+					}
 					tempMoves.push_back({ pos, newPos });
 					auto moveTest = tempBoard.Move(pos, newPos, color);
 					assert(moveTest);
-					//tempBoard.Print();
 					tempValue = MaxValueAttackSeries(tempBoard, color, INT_MIN, INT_MAX, depth, tempMoves);
 				}
 
-				value = max(value, tempValue);
-				if (value >= beta)
+				if (tempValue > value || firstAttack)
+				{
+					value = tempValue;
+					firstAttack = false;
+				}
+
+				if (value >= beta && attack)
 					return value;
 				alpha = max(alpha, value);
 			}
@@ -171,7 +197,6 @@ public:
 			attacked = true;
 			auto moveTest = tempBoard.Move(currentPos, newPos, color);
 			assert(moveTest);
-			//tempBoard.Print();
 			tempMoves.push_back({ currentPos, newPos });
 			auto tempValue = MaxValueAttackSeries(tempBoard, color, alpha, beta, depth, tempMoves);
 			if (tempValue > value)
@@ -199,6 +224,8 @@ public:
 
 		auto myPieces = board.getPieces(color);
 		auto otherPieces = board.getPieces(Common::OtherColor(color));
+		bool firstAttack = false;
+		bool attack = false;
 		for (auto piece : myPieces)
 		{
 			for (auto move : piece.second->getMoves())
@@ -214,10 +241,13 @@ public:
 					&& myPieces.find(newPos) == myPieces.end()
 					&& board.PositionOnBoard(newPos))
 				{
+					//forced capture
+					if (attack)
+						continue;
+					
 					//empty board square
 					auto moveTest = tempBoard.Move(pos, newPos, color);
 					assert(moveTest);
-					//tempBoard.Print();
 					tempValue = MaxValue(tempBoard, Common::OtherColor(color), INT_MIN, INT_MAX, depth + 1);
 				}
 				else
@@ -232,15 +262,24 @@ public:
 						|| !board.PositionOnBoard(newPos))
 						continue;
 
+					if (!attack)
+					{
+						attack = true;
+						firstAttack = true;
+					}
 					tempMoves.push_back({ pos, newPos });
 					auto moveTest = tempBoard.Move(pos, newPos, color);
 					assert(moveTest);
-					//tempBoard.Print();
 					tempValue = MinValueAttackSeries(tempBoard, color, INT_MIN, INT_MAX, depth, tempMoves);
 				}
+				
+				if (tempValue < value || firstAttack)
+				{
+					value = tempValue;
+					firstAttack = false;
+				}
 
-				value = min(tempValue, value);
-				if (value <= alpha)
+				if (value <= alpha && attack)
 					return value;
 
 				beta = min(beta, value);
@@ -277,7 +316,6 @@ public:
 			attacked = true;
 			auto moveTest = tempBoard.Move(currentPos, newPos, color);
 			assert(moveTest);
-			//tempBoard.Print();
 			tempMoves.push_back({ currentPos, newPos });
 			auto tempValue = MinValueAttackSeries(tempBoard, color, alpha, beta, depth, tempMoves);
 			if (tempValue < value)
@@ -316,6 +354,9 @@ public:
 				fitness -= m_weights->getWeight((Common::WeightStart(color) + 3) % 4);
 		}
 
+		if (board.getPieces(Common::OtherColor(color)).size() <= 0)
+			fitness += 1000;
+
 		if (m_weights->getWeightCount() > 4)
 		{
 			auto pieces = board.getPieces(color);
@@ -324,10 +365,12 @@ public:
 			for (int i = 4; i < m_weights->getWeightCount(); i++)
 			{
 				auto weightMap = i - 4;
-				if (pieces.find(m_weightToPosMap[weightMap]) != pieces.end())
-					fitness += m_weights->getWeight(i);
-				if (otherPieces.find(m_weightToPosMap[weightMap]) != otherPieces.end())
-					fitness -= m_weights->getWeight(i);
+				auto weightPos = WeightToPosition(color, weightMap);
+				auto weight = m_weights->getWeight(i);
+				if (pieces.find(weightPos) != pieces.end())
+					fitness += weight;
+				//if (otherPieces.find(weightPos) != otherPieces.end())
+					//fitness -= weight;
 			}
 		}
 		return fitness;
@@ -344,15 +387,21 @@ public:
 			m_board.Move(move.first, move.second, m_color);
 		}
 	}
-	vector<Position> m_weightToPosMap = { 
-		{ 0,0 },
+	Position WeightToPosition(Color color, int weight)
+	{
+		if (color == Color::BLACK)
+			return m_weightToPosMapBlack[weight];
+		return m_weightToPosMapRed[weight];
+	}
+	vector<Position> m_weightToPosMapBlack = { 
+		{ 0,0 }, 
 		{ 0,2 },
 		{ 0,4 },
 		{ 0,6 },
 		{ 1,1 },
 		{ 1,3 },
 		{ 1,5 },
-		{ 1,7 },
+		{ 1,7 },//home row Weight 12 index 11
 		{ 2,0 },
 		{ 2,2 },
 		{ 2,4 },
@@ -360,7 +409,7 @@ public:
 		{ 3,1 },
 		{ 3,3 },
 		{ 3,5 },
-		{ 3,7 },
+		{ 3,7 },//home row Weight 20 index 19
 		{ 4,0 },
 		{ 4,2 },
 		{ 4,4 },
@@ -368,7 +417,7 @@ public:
 		{ 5,1 },
 		{ 5,3 },
 		{ 5,5 },
-		{ 5,7 },
+		{ 5,7 },//home row Weight 28 index 27
 		{ 6,0 },
 		{ 6,2 },
 		{ 6,4 },
@@ -376,8 +425,43 @@ public:
 		{ 7,1 },
 		{ 7,3 },
 		{ 7,5 },
-		{ 7,7 }
+		{ 7,7 }//home row Weight 36 index 35
 	};
+	vector<Position> m_weightToPosMapRed = {
+		{ 7,7 }, // 0 0
+		{ 7,5 }, // 0 2
+		{ 7,3 }, // 0 4
+		{ 7,1 }, // 0 6
+		{ 6,6 }, // 1 1
+		{ 6,4 },//{ 1,3 },
+		{ 6,2 },//{ 1,5 },
+		{ 6,0 },//{ 1,7 },
+		{ 5,7 },//{ 2,0 },
+		{ 5,5 },//{ 2,2 },
+		{ 5,3 },//{ 2,4 },
+		{ 5,1 },//{ 2,6 },
+		{ 4,6 },//{ 3,1 },
+		{ 4,4 },//{ 3,3 },
+		{ 4,2 },//{ 3,5 },
+		{ 4,0 },//{ 3,7 },
+		{ 3,7 },//{ 4,0 },
+		{ 3,5 },//{ 4,2 },
+		{ 3,3 },//{ 4,4 },
+		{ 3,1 },//{ 4,6 },
+		{ 2,6 },//{ 5,1 },
+		{ 2,4 },//{ 5,3 },
+		{ 2,2 },//{ 5,5 },
+		{ 2,0 },//{ 5,7 },
+		{ 1,7 },//{ 6,0 },
+		{ 1,5 },//{ 6,2 },
+		{ 1,3 },//{ 6,4 },
+		{ 1,1 },//{ 6,6 },
+		{ 0,6 },//{ 7,1 },
+		{ 0,4 },//{ 7,3 },
+		{ 0,2 },//{ 7,5 },
+		{ 0,0 }//{ 7,7 }
+	};
+
 	int m_maxDepth;
 	IWeight* m_weights;
 	Board& m_board;
