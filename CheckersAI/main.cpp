@@ -182,9 +182,9 @@ void RunTournamentSix()
 int main()
 {
 	//runSoloMatch();
-	//RunTournamentSix();
+	RunTournamentSix();
 
-	/**/
+	/*
 	PieceWeights testWeights({ 6.07685,	2.90353,	9.8178,		12.3997 }, 5);
 	GenAlgo genAlgo(&testWeights);
 	
@@ -201,7 +201,7 @@ int main()
 	{
 		tournamentWeights[i + 1] = genAlgo.m_bestWeights[i];
 	}
-	
+	*/
 
 	/*auto fitnesses = Tournament(tournamentWeights, WINNER_POOL_SIZE + 1);
 

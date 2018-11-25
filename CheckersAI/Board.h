@@ -56,7 +56,47 @@ public:
 
 		return false;
 	}
+	bool AttackOnBoard(Color color)
+	{
+		auto playerPieces = getPieces(color);
 
+		for (auto piece : playerPieces)
+			for (auto move : piece.second->getAttackMoves())
+				if (ValidAttack(color, piece.first, Common::PositionPlusMove(piece.first, move)))
+					return true;
+
+		return false;
+	}
+	bool ValidAttack(Color color, Position start, Position end)
+	{
+		auto playerPieces = getPieces(color);
+		auto otherPieces = getPieces(Common::OtherColor(color));
+		auto jumpedPos = Common::JumpedPosition(start, end);
+
+		if (otherPieces.find(jumpedPos) == otherPieces.end())
+			return false;
+
+		if (otherPieces.find(end) != otherPieces.end())
+			return false;
+
+		if (playerPieces.find(end) != playerPieces.end())
+			return false;
+
+		return PositionOnBoard(end);
+	}
+	bool ValidMove(Color color, Position end)
+	{
+		auto playerPieces = getPieces(color);
+		auto otherPieces = getPieces(Common::OtherColor(color));
+
+		if (otherPieces.find(end) != otherPieces.end())
+			return false;
+
+		if (playerPieces.find(end) != playerPieces.end())
+			return false;
+		
+		return PositionOnBoard(end);
+	}
 	void MovePiece(PieceCollection& pieces, Position start, Position end)
 	{
 		auto piece = pieces.find(start);

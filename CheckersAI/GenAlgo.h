@@ -27,7 +27,7 @@ public:
 		
 		fill(m_bestFitnesses, m_bestFitnesses + WINNER_POOL_SIZE, -1);
 
-		reportStream.open(R"(C:\Users\Matt\Desktop\CS664\CS664_FinalProject_MatthewScott\Tournament9_ForcedCapture.txt)", std::ostream::out);
+		reportStream.open(R"(C:\Users\Matt\Desktop\CS664\CS664_FinalProject_MatthewScott\Tournament10_CrossOverCorrect.txt)", std::ostream::out);
 		reportStream << "Candidate";
 		for (auto i = 0; i < m_candidateWeights[0]->getWeightCount(); i++)
 			reportStream << ",Weight" + to_string(i+1);
@@ -145,7 +145,7 @@ public:
 		{
 			double randProb = rand();
 			randProb /= RAND_MAX;
-			if (randProb > CROSS_OVER_RATE)
+			if (randProb < CROSS_OVER_RATE)
 			{
 				int randPoint = rand() % (m_candidateWeights[i * 2]->getWeightCount()) + 1;
 
